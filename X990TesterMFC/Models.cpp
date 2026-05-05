@@ -22,19 +22,48 @@ string UnescapeString(const string &input) {
   for (size_t i = 0; i < input.length(); ++i) {
     if (input[i] == '\\' && i + 1 < input.length()) {
       char next = input[i + 1];
-      if (next == '"')
+      if (next == '"') {
         output += '"';
-      else if (next == '\\')
+        i++;
+      } else if (next == '\\') {
         output += '\\';
-      else
-        output += next; // simplistic
-      i++;
+        i++;
+      } else if (next == 'n') {
+        output += '\n';
+        i++;
+      } else if (next == 'r') {
+        output += '\r';
+        i++;
+      } else if (next == 't') {
+        output += '\t';
+        i++;
+      } else if (next == 'u' && i + 5 < input.length()) {
+        // \uXXXX — parse 4 hex digits into a Unicode codepoint
+        char hex[5] = { input[i+2], input[i+3], input[i+4], input[i+5], '\0' };
+        unsigned int codepoint = strtoul(hex, nullptr, 16);
+        // Encode as UTF-8 (covers BMP chars, including all base64 special chars)
+        if (codepoint < 0x80) {
+          output += (char)codepoint;
+        } else if (codepoint < 0x800) {
+          output += (char)(0xC0 | (codepoint >> 6));
+          output += (char)(0x80 | (codepoint & 0x3F));
+        } else {
+          output += (char)(0xE0 | (codepoint >> 12));
+          output += (char)(0x80 | ((codepoint >> 6) & 0x3F));
+          output += (char)(0x80 | (codepoint & 0x3F));
+        }
+        i += 5;
+      } else {
+        output += next; // fallback: pass through
+        i++;
+      }
     } else {
       output += input[i];
     }
   }
   return output;
 }
+
 
 // Very naive JSON extractor. Assumes simple non-nested or simple nested
 // structure. Finds "key":"value" or "key":123

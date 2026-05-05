@@ -124,12 +124,20 @@ bool CCrypto::LoadTerminalPublicKey() {
   std::ifstream infile(terminalKeyPath);
   if (!infile.is_open())
     return false;
-  std::string b64Key;
+  std::string b64Key; 
   infile >> b64Key;
   infile.close();
 
   if (b64Key.empty())
     return false;
+
+  // Strip UTF-8 BOM if present (EF BB BF)
+  if (b64Key.size() >= 3 && 
+      (unsigned char)b64Key[0] == 0xEF && 
+      (unsigned char)b64Key[1] == 0xBB && 
+      (unsigned char)b64Key[2] == 0xBF) {
+      b64Key.erase(0, 3);
+  }
 
   return SetTerminalPublicKey(b64Key);
 }
@@ -228,51 +236,29 @@ std::string CCrypto::Decrypt(const std::string &encAesKey,
   ULONG cbResult = 0;
 
   // 1. Decrypt AES Key with RSA (Private Key)
-  // Input is Big Endian (from network). CNG expects Big Endian. No Reversal
-  // Needed.
-
-  // Check for weird Android/Java framing (extra 4 bytes at start?)
-  // If input is 516 bytes for a 4096-bit key (512 bytes), strip header.
-  // We can check key size.
+  // Input is Big Endian (from network). CNG expects Big Endian. No Reversal Needed.
   DWORD keyLenBits = 0;
   DWORD cbData = 0;
   NCryptGetProperty(m_hPcKey, NCRYPT_LENGTH_PROPERTY, (PUCHAR)&keyLenBits,
                     sizeof(DWORD), &cbData, 0);
-  DWORD keyBytes = keyLenBits / 8;
+  DWORD keyBytes = keyLenBits / 8; // Used to pre-allocate NCryptDecrypt output buffer
 
-  // Heuristic: If size is slightly massive, check.
-  if (encKeyBuf.size() > keyBytes && encKeyBuf.size() <= keyBytes + 32) {
-    size_t diff = encKeyBuf.size() - keyBytes;
-    // Strip leading bytes
-    char msg[128];
-    sprintf_s(
-        msg,
-        "Trimming %llu bytes from Encrypted AES Key (Input: %llu, Key: %lu)",
-        diff, encKeyBuf.size(), keyBytes);
-    CFileLogService::Log("Decrypt", msg);
-    std::vector<unsigned char> trimmed(encKeyBuf.begin() + diff,
-                                       encKeyBuf.end());
-    encKeyBuf = trimmed;
-  }
-
+  // NCryptDecrypt with RSA/PKCS1 does NOT support the two-call pattern
+  // (NULL output buffer to query size) — it returns NTE_INVALID_PARAMETER.
+  // The decrypted output is always <= key size in bytes, so pre-allocate that.
+  std::vector<unsigned char> rawAesKey(keyBytes);
+  cbResult = keyBytes;
   status = NCryptDecrypt(m_hPcKey, encKeyBuf.data(), (DWORD)encKeyBuf.size(),
-                         NULL, NULL, 0, &cbResult, NCRYPT_PAD_PKCS1_FLAG);
+                         NULL, rawAesKey.data(), cbResult, &cbResult,
+                         NCRYPT_PAD_PKCS1_FLAG);
   if (!NT_SUCCESS(status)) {
     char msg[128];
     sprintf_s(msg, "Error decrypting AES key (RSA). Status: 0x%X", status);
     CFileLogService::Log("Decrypt", msg);
     return "";
   }
-
-  std::vector<unsigned char> rawAesKey(cbResult);
-  status = NCryptDecrypt(m_hPcKey, encKeyBuf.data(), (DWORD)encKeyBuf.size(),
-                         NULL, rawAesKey.data(), cbResult, &cbResult,
-                         NCRYPT_PAD_PKCS1_FLAG);
-  if (!NT_SUCCESS(status)) {
-    CFileLogService::Log("Decrypt",
-                         "Error decrypting AES key (RSA) - Final step.");
-    return "";
-  }
+  // Trim to the actual decrypted size (PKCS1 removes padding, so cbResult = 32 for AES-256)
+  rawAesKey.resize(cbResult);
   // rawAesKey now contains the 32-byte AES key
 
   // 2. Decrypt Data with AES

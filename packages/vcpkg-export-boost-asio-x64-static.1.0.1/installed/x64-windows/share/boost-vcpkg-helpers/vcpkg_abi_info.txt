@@ -1,0 +1,12 @@
+boost-modular-headers.cmake 708dd29f6ec74e94f86a2708e6e2d2f3602d0730
+boost-uninstall 3079f5c00f0b421ceb243e0d968bb81a19f6a36c
+cmake 3.19.2
+features core
+portfile.cmake eb0233acc9730db4cc887e5bc51f1a61ae719d46
+ports.cmake 4002bb52d511816fcfa495a2bc7a5bdeb1d4bc8f
+post_build_checks 2
+powershell 7.1.0
+triplet x64-windows-static
+triplet_abi 1b8fc2de2413a472ec840129a759f172861aa4f8-a1c0eabb0c5177b6a8fb97a58ae398880c47b352-f01edd1660dfd791f5d68e8b1fd7e03478ccd981
+usage 6b5feb7f034ac89108847d22726a7a5e74ab3116
+vcpkg.json 602aa2f1708704e783dae9451578b1afbb5518b9

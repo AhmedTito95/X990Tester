@@ -110,7 +110,7 @@ void CX990TesterMFCDlg::OnBnClickedBtnConnect() {
 
   Log(_T("Testing Connection..."));
   try {
-    if (m_comm.TestConnection(CStrToStr(ip), p)) {
+    if (m_comm.TestConnection(ip, p)) {
       Log(_T("Connection Available"));
       SetStatus(_T("Connected"));
     } else {
@@ -141,7 +141,7 @@ void CX990TesterMFCDlg::OnBnClickedBtnInit() {
 
   // Call service
   PosResponse resp =
-      CTransactionService::Init(m_comm, m_crypto, CStrToStr(ip), port);
+      CTransactionService::Init(m_comm, m_crypto, ip, port);
 
   if (resp.ResponseCode == 0) {
     if (m_crypto.SaveTerminalPublicKey(resp.TerminalRsaPubKey)) {
@@ -179,7 +179,7 @@ void CX990TesterMFCDlg::OnBnClickedBtnSale() {
   Log(_T("Sending SALE..."));
 
   PosResponse resp = CTransactionService::Sale(
-      m_comm, m_crypto, CStrToStr(ip), port, cents, 376, "DEMO-123", print, 1);
+      m_comm, m_crypto, ip, port, cents, 376, "DEMO-123", print, 1);
 
   if (resp.ResponseCode == 0) {
     Log(_T("Transaction APPROVED"));
@@ -219,7 +219,7 @@ void CX990TesterMFCDlg::OnBnClickedBtnRefund() {
   Log(_T("Sending REFUND..."));
 
   PosResponse resp = CTransactionService::Refund(
-      m_comm, m_crypto, CStrToStr(ip), port, cents, 376, "DEMO-REF", _ttoi(seq),
+      m_comm, m_crypto, ip, port, cents, 376, "DEMO-REF", _ttoi(seq),
       CStrToStr(auth), CStrToStr(date), 1);
 
   if (resp.ResponseCode == 0) {

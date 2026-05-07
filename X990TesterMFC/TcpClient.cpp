@@ -3,17 +3,18 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <ws2tcpip.h>
-
+#include <boost/asio.hpp>
+#include <array>
+#include <atlbase.h>
 
 using namespace std;
+using boost::asio::ip::tcp;
 
 CTcpClient::CTcpClient() {
-  WSADATA wsa;
-  WSAStartup(MAKEWORD(2, 2), &wsa);
 }
 
-CTcpClient::~CTcpClient() { WSACleanup(); }
+CTcpClient::~CTcpClient() {
+}
 
 std::string CTcpClient::WrapFrame(const std::string &json) {
   // ~PCNC~{len:D4}~{json}
@@ -30,102 +31,83 @@ std::string CTcpClient::UnwrapFrame(const std::string &framed) {
   return framed.substr(first, last - first + 1);
 }
 
-SOCKET CTcpClient::Connect(const std::string &ip, int port) {
-  SOCKET s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-  if (s == INVALID_SOCKET)
-    return INVALID_SOCKET;
+bool CTcpClient::TestConnection(const CString &ip, int port) {
+  try {
+    boost::asio::io_context io_context;
+    tcp::resolver resolver(io_context);
+    CStringA ipA(ip); // Convert IP string to narrow for boost
+    tcp::resolver::results_type endpoints = resolver.resolve(std::string(ipA), std::to_string(port));
 
-  sockaddr_in addr;
-  addr.sin_family = AF_INET;
-  addr.sin_port = htons(port);
-  inet_pton(AF_INET, ip.c_str(), &addr.sin_addr);
-
-  // Connect with timeout (blocking connect is default)
-  if (connect(s, (SOCKADDR *)&addr, sizeof(addr)) == SOCKET_ERROR) {
-    closesocket(s);
-    return INVALID_SOCKET;
-  }
-  return s;
-}
-
-void CTcpClient::Close(SOCKET sock) {
-  if (sock != INVALID_SOCKET) {
-    shutdown(sock, SD_BOTH);
-    closesocket(sock);
-  }
-}
-
-bool CTcpClient::TestConnection(const std::string &ip, int port) {
-  SOCKET s = Connect(ip, port);
-  if (s == INVALID_SOCKET)
+    tcp::socket socket(io_context);
+    boost::asio::connect(socket, endpoints);
+    socket.close();
+    return true;
+  } catch (std::exception&) {
     return false;
-  Close(s);
-  return true;
+  }
 }
 
-std::string CTcpClient::SendAndReceive(const std::string &ip, int port,
-                                       const std::string &json) {
-  SOCKET s = Connect(ip, port);
-  if (s == INVALID_SOCKET)
-    return "";
+CString CTcpClient::SendAndReceive(const CString &ip, int port,
+                                   const CString &json) {
+  try {
+    boost::asio::io_context io_context;
+    tcp::resolver resolver(io_context);
+    CStringA ipA(ip); // Convert IP string to narrow for boost
+    tcp::resolver::results_type endpoints = resolver.resolve(std::string(ipA), std::to_string(port));
 
-  std::string framed = WrapFrame(json);
+    tcp::socket socket(io_context);
+    boost::asio::connect(socket, endpoints);
 
-  // Send
-  if (send(s, framed.c_str(), (int)framed.length(), 0) == SOCKET_ERROR) {
-    Close(s);
-    return "";
-  }
+    CStringA jsonA(json);
+    std::string stdJson(jsonA.GetString(), jsonA.GetLength());
+    std::string framed = WrapFrame(stdJson);
+    boost::asio::write(socket, boost::asio::buffer(framed));
 
-  // Read
-  // We emulate "read what's available" with a timeout logic.
-  // 1. Set Receive Timeout
-  DWORD timeout = 40*1000; 
-  setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (const char *)&timeout,
-             sizeof(timeout));
+    // Set receive timeout
+    DWORD timeout = 40 * 1000;
+    setsockopt(socket.native_handle(), SOL_SOCKET, SO_RCVTIMEO, (const char *)&timeout,
+               sizeof(timeout));
 
-  std::string buffer;
-  char temp[4096];
+    std::string buffer;
+    std::array<char, 4096> temp;
+    boost::system::error_code error;
 
-  // Read loop
-  // Since we don't strictly parse length header in C# unwrapper, we just read
-  // until we think we're done or timeout? C# reads "while DataAvailable". We'll
-  // read at least once. Then check if more is coming.
+    // Use std::string internally for parsing raw network bytes
+    while (true) {
+      size_t r = socket.read_some(boost::asio::buffer(temp), error);
+      if (error == boost::asio::error::eof)
+        break; // Connection closed cleanly by peer.
+      else if (error)
+        break; // Some other error.
 
-  while (true) {
-    int r = recv(s, temp, sizeof(temp) - 1, 0);
-    if (r > 0) {
-      temp[r] = '\0';
-      buffer += temp;
+      if (r > 0) {
+        buffer.append(temp.data(), r);
 
-      // Check content length if possible to quit early
-      // If buffer has } at the end, likely done (JSON).
-      if (buffer.length() > 0 && buffer.back() == '}') {
-        // Peek? Or just wait 100ms for more?
-        // Let's assume one response packet for now, or check buffer length vs
-        // frame header? Frame header: ~PCNC~LLLL~ (11 chars)
-        if (buffer.length() >= 11) {
-          // Try to parse length
-          if (buffer.substr(0, 6) == "~PCNC~") {
-            try {
-              int len = stoi(buffer.substr(6, 4));
-              // Total expected: 11 + len
-              if (buffer.length() >= 11 + len) {
-                break; // Done
+        // Check content length if possible to quit early
+        if (buffer.length() > 0 && buffer.back() == '}') {
+          if (buffer.length() >= 11) {
+            if (buffer.substr(0, 6) == "~PCNC~") {
+              try {
+                int len = stoi(buffer.substr(6, 4));
+                if (buffer.length() >= 11 + len) {
+                  break; // Done
+                }
+              } catch (...) {
               }
-            } catch (...) {
             }
           }
         }
       }
-    } else if (r == 0) {
-      break; // Closed
-    } else {
-      // Error or Timeout
-      break;
     }
-  }
 
-  Close(s);
-  return UnwrapFrame(buffer);
+    boost::system::error_code ignored_ec;
+    socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ignored_ec);
+    socket.close();
+
+    // Convert network byte buffer back to CString
+    std::string unwrapped = UnwrapFrame(buffer);
+    return CString(unwrapped.c_str());
+  } catch (std::exception&) {
+    return _T("");
+  }
 }

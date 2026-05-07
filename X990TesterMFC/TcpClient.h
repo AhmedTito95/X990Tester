@@ -1,11 +1,7 @@
 #pragma once
-#include <string>
+#include <afx.h>
 #include <vector>
-#include <winsock2.h>
-
-
-// Link with ws2_32.lib
-#pragma comment(lib, "ws2_32.lib")
+#include <string>
 
 class CTcpClient {
 public:
@@ -19,17 +15,13 @@ public:
   // 4. Reads response
   // 5. Unwraps JSON
   // 6. Disconnects
-  std::string SendAndReceive(const std::string &ip, int port,
-                             const std::string &json);
+  CString SendAndReceive(const CString &ip, int port,
+                         const CString &json);
 
   // Tests connection ability
-  bool TestConnection(const std::string &ip, int port);
+  bool TestConnection(const CString &ip, int port);
 
 private:
   std::string WrapFrame(const std::string &json);
   std::string UnwrapFrame(const std::string &framed);
-
-  // Internal helpers
-  SOCKET Connect(const std::string &ip, int port);
-  void Close(SOCKET sock);
 };

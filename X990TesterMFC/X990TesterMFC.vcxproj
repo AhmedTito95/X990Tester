@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\packages\vcpkg-export-boost-asio-x64-static.1.0.1\build\native\vcpkg-export-boost-asio-x64-static.props" Condition="Exists('..\packages\vcpkg-export-boost-asio-x64-static.1.0.1\build\native\vcpkg-export-boost-asio-x64-static.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -214,6 +215,7 @@
     <ResourceCompile Include="X990TesterMFC.rc" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="packages.config" />
     <None Include="res\X990TesterMFC.rc2" />
   </ItemGroup>
   <ItemGroup>
@@ -221,5 +223,13 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="..\packages\vcpkg-export-boost-asio-x64-static.1.0.1\build\native\vcpkg-export-boost-asio-x64-static.targets" Condition="Exists('..\packages\vcpkg-export-boost-asio-x64-static.1.0.1\build\native\vcpkg-export-boost-asio-x64-static.targets')" />
   </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\vcpkg-export-boost-asio-x64-static.1.0.1\build\native\vcpkg-export-boost-asio-x64-static.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\vcpkg-export-boost-asio-x64-static.1.0.1\build\native\vcpkg-export-boost-asio-x64-static.props'))" />
+    <Error Condition="!Exists('..\packages\vcpkg-export-boost-asio-x64-static.1.0.1\build\native\vcpkg-export-boost-asio-x64-static.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\vcpkg-export-boost-asio-x64-static.1.0.1\build\native\vcpkg-export-boost-asio-x64-static.targets'))" />
+  </Target>
 </Project>

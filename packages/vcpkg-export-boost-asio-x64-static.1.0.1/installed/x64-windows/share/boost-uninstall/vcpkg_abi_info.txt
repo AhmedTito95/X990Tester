@@ -1,0 +1,9 @@
+cmake 3.19.2
+features core
+portfile.cmake 1790c647f4d1adedfa4d020a38444ee100367c1c
+ports.cmake 4002bb52d511816fcfa495a2bc7a5bdeb1d4bc8f
+post_build_checks 2
+powershell 7.1.0
+triplet x64-windows-static
+triplet_abi 1b8fc2de2413a472ec840129a759f172861aa4f8-a1c0eabb0c5177b6a8fb97a58ae398880c47b352-f01edd1660dfd791f5d68e8b1fd7e03478ccd981
+vcpkg.json d0ba9c7259017a1a6fc086078dfc93ccc4c187f2

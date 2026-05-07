@@ -1,0 +1,12 @@
+boost-vcpkg-helpers 9ad3a77184cef4215404e6d17b45f0343391d85b
+cmake 3.19.2
+features core
+portfile.cmake 7252104e5fd7966b72989a07ef1d4d225d3f9003
+ports.cmake 4002bb52d511816fcfa495a2bc7a5bdeb1d4bc8f
+post_build_checks 2
+powershell 7.1.0
+triplet x64-windows-static
+triplet_abi 1b8fc2de2413a472ec840129a759f172861aa4f8-a1c0eabb0c5177b6a8fb97a58ae398880c47b352-f01edd1660dfd791f5d68e8b1fd7e03478ccd981
+vcpkg.json c9ec2a8c68376307e5103b91c1ce465265106b7f
+vcpkg_from_git 99e83c6ffac2dd07afaf73d795988ca5dec2dc8b
+vcpkg_from_github a9dd1453b8873c9702731c6c36e79fb0ab6ae486

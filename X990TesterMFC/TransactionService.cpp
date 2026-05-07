@@ -6,7 +6,7 @@
 using namespace std;
 
 PosResponse CTransactionService::Init(CTcpClient &client, CCrypto &crypto,
-                                      const std::string &ip, int port) {
+                                      const CString &ip, int port) {
   PosResponse errResp;
   errResp.ResponseCode = -1;
 
@@ -25,7 +25,9 @@ PosResponse CTransactionService::Init(CTcpClient &client, CCrypto &crypto,
   string json = req.ToJson();
 
   // Send
-  string responseJson = client.SendAndReceive(ip, port, json);
+  CString responseJsonCString = client.SendAndReceive(ip, port, CString(json.c_str()));
+  CStringA responseJsonA(responseJsonCString);
+  string responseJson(responseJsonA.GetString());
   CFileLogService::Log("InitRequest", json);
   CFileLogService::Log("InitResponse", responseJson);
 
@@ -48,7 +50,7 @@ PosResponse CTransactionService::Init(CTcpClient &client, CCrypto &crypto,
 }
 
 PosResponse CTransactionService::Sale(CTcpClient &client, CCrypto &crypto,
-                                      const std::string &ip, int port,
+                                      const CString &ip, int port,
                                       int amount, int currency,
                                       const std::string &receipt, int print,
                                       int cashierId) {
@@ -78,7 +80,9 @@ PosResponse CTransactionService::Sale(CTcpClient &client, CCrypto &crypto,
   string packetJson = packet.ToJson();
 
   // Send
-  string responseJson = client.SendAndReceive(ip, port, packetJson);
+  CString responseJsonCString = client.SendAndReceive(ip, port, CString(packetJson.c_str()));
+  CStringA responseJsonA(responseJsonCString);
+  string responseJson(responseJsonA.GetString());
   CFileLogService::Log("SaleRequest (Encrypted)", packetJson);
   CFileLogService::Log("SaleResponse (Encrypted)", responseJson);
 
@@ -102,7 +106,7 @@ PosResponse CTransactionService::Sale(CTcpClient &client, CCrypto &crypto,
 }
 
 PosResponse CTransactionService::Refund(
-    CTcpClient &client, CCrypto &crypto, const std::string &ip, int port,
+    CTcpClient &client, CCrypto &crypto, const CString &ip, int port,
     int amount, int currency, const std::string &receipt, int seqNumber,
     const std::string &authCode, const std::string &orgDate, int cashierId) {
   PosResponse errResp;
@@ -133,7 +137,9 @@ PosResponse CTransactionService::Refund(
   string packetJson = packet.ToJson();
 
   // Send
-  string responseJson = client.SendAndReceive(ip, port, packetJson);
+  CString responseJsonCString = client.SendAndReceive(ip, port, CString(packetJson.c_str()));
+  CStringA responseJsonA(responseJsonCString);
+  string responseJson(responseJsonA.GetString());
   CFileLogService::Log("RefundRequest (Encrypted)", packetJson);
   CFileLogService::Log("RefundResponse (Encrypted)", responseJson);
 

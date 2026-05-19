@@ -5,21 +5,20 @@
 
 using namespace std;
 
-PosResponse CTransactionService::Init(CTcpClient &client, CCrypto &crypto,
+PosResponse CTransactionService::Init(CTcpClient &client,
+                                      CKeyStorageService &keys,
                                       const CString &ip, int port) {
   PosResponse errResp;
   errResp.ResponseCode = -1;
 
-  // Ensure Crypto is ready (keys generated)
-  // Note: In C#, AppSession setup keys. Here we assume Initialize() was called
-  // or we call it. If we call it here, we regenerate keys every INIT.
-  if (!crypto.Initialize()) {
-    errResp.ErrorMessage = "Crypto Initialization Failed";
+  // Ensure keys are ready
+  if (!keys.LoadOrCreatePcKey()) {
+    errResp.ErrorMessage = "Key Storage Initialization Failed";
     return errResp;
   }
 
   InitRequest req;
-  req.RsaPubKey = crypto.GetPcPublicKey();
+  req.RsaPubKey = keys.GetPcPublicKeyBase64();
 
   // Serialize
   string json = req.ToJson();
@@ -40,7 +39,7 @@ PosResponse CTransactionService::Init(CTcpClient &client, CCrypto &crypto,
 
   // If success, store the terminal key
   if (resp.ResponseCode == 0 && !resp.TerminalRsaPubKey.empty()) {
-    if (!crypto.SetTerminalPublicKey(resp.TerminalRsaPubKey)) {
+    if (!keys.SetTerminalPublicKey(resp.TerminalRsaPubKey)) {
       resp.ResponseCode = -1;
       resp.ErrorMessage = "Failed to store Terminal Public Key";
     }
@@ -49,7 +48,8 @@ PosResponse CTransactionService::Init(CTcpClient &client, CCrypto &crypto,
   return resp;
 }
 
-PosResponse CTransactionService::Sale(CTcpClient &client, CCrypto &crypto,
+PosResponse CTransactionService::Sale(CTcpClient &client,
+                                      CKeyStorageService &keys,
                                       const CString &ip, int port,
                                       int amount, int currency,
                                       const std::string &receipt, int print,
@@ -68,7 +68,7 @@ PosResponse CTransactionService::Sale(CTcpClient &client, CCrypto &crypto,
   string encKey, encData;
 
   // Encrypt
-  if (!crypto.Encrypt(plainJson, encKey, encData)) {
+  if (!CCryptoService::Encrypt(keys, plainJson, encKey, encData)) {
     errResp.ErrorMessage = "Encryption Failed";
     return errResp;
   }
@@ -93,7 +93,7 @@ PosResponse CTransactionService::Sale(CTcpClient &client, CCrypto &crypto,
  
   EncryptedPacket respPacket = EncryptedPacket::FromJson(responseJson);
   string clearJson =
-      crypto.Decrypt(respPacket.EncryptedAesKey, respPacket.EncryptedData);
+      CCryptoService::Decrypt(keys, respPacket.EncryptedAesKey, respPacket.EncryptedData);
 
   CFileLogService::Log("SaleResponse (Decrypted)", clearJson);
 
@@ -106,7 +106,7 @@ PosResponse CTransactionService::Sale(CTcpClient &client, CCrypto &crypto,
 }
 
 PosResponse CTransactionService::Refund(
-    CTcpClient &client, CCrypto &crypto, const CString &ip, int port,
+    CTcpClient &client, CKeyStorageService &keys, const CString &ip, int port,
     int amount, int currency, const std::string &receipt, int seqNumber,
     const std::string &authCode, const std::string &orgDate, int cashierId) {
   PosResponse errResp;
@@ -125,7 +125,7 @@ PosResponse CTransactionService::Refund(
   string encKey, encData;
 
   // Encrypt
-  if (!crypto.Encrypt(plainJson, encKey, encData)) {
+  if (!CCryptoService::Encrypt(keys, plainJson, encKey, encData)) {
     errResp.ErrorMessage = "Encryption Failed";
     return errResp;
   }
@@ -151,7 +151,7 @@ PosResponse CTransactionService::Refund(
   // Decrypt Response
   EncryptedPacket respPacket = EncryptedPacket::FromJson(responseJson);
   string clearJson =
-      crypto.Decrypt(respPacket.EncryptedAesKey, respPacket.EncryptedData);
+      CCryptoService::Decrypt(keys, respPacket.EncryptedAesKey, respPacket.EncryptedData);
 
   CFileLogService::Log("RefundResponse (Decrypted)", clearJson);
 
@@ -162,3 +162,4 @@ PosResponse CTransactionService::Refund(
 
   return PosResponse::FromJson(clearJson);
 }
+

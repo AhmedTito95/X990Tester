@@ -48,6 +48,12 @@
     <ClInclude Include="TransactionService.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="CryptoService.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="KeyStorageService.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="X990TesterMFC.cpp">
@@ -72,6 +78,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="TransactionService.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CryptoService.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="KeyStorageService.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

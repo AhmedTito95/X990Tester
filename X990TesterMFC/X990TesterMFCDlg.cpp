@@ -52,8 +52,8 @@ BOOL CX990TesterMFCDlg::OnInitDialog() {
   m_editPort.SetWindowText(port);
 
   // Check for existing keys
-  if (m_crypto.Initialize()) {
-    if (m_crypto.LoadTerminalPublicKey()) {
+  if (m_keys.LoadOrCreatePcKey()) {
+    if (m_keys.LoadTerminalPublicKey()) {
       m_isInitialized = true;
       SetStatus(_T("Keys Loaded"));
       Log(_T("Ready. Keys loaded from storage."));
@@ -125,9 +125,9 @@ void CX990TesterMFCDlg::OnBnClickedBtnConnect() {
 void CX990TesterMFCDlg::OnBnClickedBtnInit() {
   m_isInitialized = false;
 
-  // Initialize Crypto (loads existing keys)
-  if (!m_crypto.Initialize()) {
-    Log(_T("Crypto Init Failed"));
+  // Initialize keys (loads existing keys)
+  if (!m_keys.LoadOrCreatePcKey()) {
+    Log(_T("Key Storage Init Failed"));
     return;
   }
 
@@ -141,10 +141,10 @@ void CX990TesterMFCDlg::OnBnClickedBtnInit() {
 
   // Call service
   PosResponse resp =
-      CTransactionService::Init(m_comm, m_crypto, ip, port);
+      CTransactionService::Init(m_comm, m_keys, ip, port);
 
   if (resp.ResponseCode == 0) {
-    if (m_crypto.SaveTerminalPublicKey(resp.TerminalRsaPubKey)) {
+    if (m_keys.SaveTerminalPublicKey(resp.TerminalRsaPubKey)) {
       m_isInitialized = true;
       Log(_T("INIT Success. Keys Saved."));
     } else {
@@ -179,7 +179,7 @@ void CX990TesterMFCDlg::OnBnClickedBtnSale() {
   Log(_T("Sending SALE..."));
 
   PosResponse resp = CTransactionService::Sale(
-      m_comm, m_crypto, ip, port, cents, 376, "DEMO-123", print, 1);
+      m_comm, m_keys, ip, port, cents, 376, "DEMO-123", print, 1);
 
   if (resp.ResponseCode == 0) {
     Log(_T("Transaction APPROVED"));
@@ -219,7 +219,7 @@ void CX990TesterMFCDlg::OnBnClickedBtnRefund() {
   Log(_T("Sending REFUND..."));
 
   PosResponse resp = CTransactionService::Refund(
-      m_comm, m_crypto, ip, port, cents, 376, "DEMO-REF", _ttoi(seq),
+      m_comm, m_keys, ip, port, cents, 376, "DEMO-REF", _ttoi(seq),
       CStrToStr(auth), CStrToStr(date), 1);
 
   if (resp.ResponseCode == 0) {

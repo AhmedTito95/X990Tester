@@ -1,7 +1,4 @@
-using System;
-using System.IO;
 using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
 namespace X990TesterCore
@@ -58,23 +55,6 @@ namespace X990TesterCore
             return rsa;
         }
 
-        /// <summary>
-        /// Deletes the PC key pair from the key container (use when you want
-        /// to force a new key on the next INIT).
-        /// </summary>
-        public static void DeletePcKey()
-        {
-            var cspParams = new CspParameters
-            {
-                KeyContainerName = ContainerName,
-                KeyNumber         = (int)KeyNumber.Exchange,
-                Flags             = CspProviderFlags.UseMachineKeyStore
-            };
-            var rsa = new RSACryptoServiceProvider(cspParams);
-            rsa.PersistKeyInCsp = false;  // Setting false then disposing deletes it
-            rsa.Clear();
-        }
-
         // ─── Terminal Public Key ──────────────────────────────────────────────────────
 
         /// <summary>
@@ -108,20 +88,6 @@ namespace X990TesterCore
             var rsa = new RSACryptoServiceProvider();
             rsa.ImportSubjectPublicKeyInfo(der, out _);
             return rsa;
-        }
-
-        /// <summary>
-        /// Returns true if the terminal key file exists on disk.
-        /// </summary>
-        public static bool TerminalKeyExists() => File.Exists(TerminalKeyPath);
-
-        /// <summary>
-        /// Deletes the saved terminal key from disk.
-        /// </summary>
-        public static void DeleteTerminalKey()
-        {
-            if (File.Exists(TerminalKeyPath))
-                File.Delete(TerminalKeyPath);
         }
     }
 }

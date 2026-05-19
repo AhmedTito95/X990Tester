@@ -185,8 +185,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Crypto.h" />
+    <ClInclude Include="CryptoService.h" />
     <ClInclude Include="FileLogService.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="KeyStorageService.h" />
     <ClInclude Include="Models.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Resource.h" />
@@ -198,7 +200,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Crypto.cpp" />
+    <ClCompile Include="CryptoService.cpp" />
     <ClCompile Include="FileLogService.cpp" />
+    <ClCompile Include="KeyStorageService.cpp" />
     <ClCompile Include="Models.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Crypto.h"
+#include "KeyStorageService.h"
 #include "Models.h"
 #include "TcpClient.h"
 
@@ -28,7 +28,7 @@ public:
   void SetStatus(const CString &status);
 
 private:
-  CCrypto m_crypto;
+  CKeyStorageService m_keys;
   CTcpClient m_comm;
   bool m_isInitialized = false;
 

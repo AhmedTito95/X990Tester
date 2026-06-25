@@ -6,8 +6,8 @@ using namespace std;
 
 bool CCryptoService::Encrypt(CKeyStorageService &keys,
                              const std::string &plainText,
-                             CString &outEncryptedAesKey,
-                             CString &outEncryptedData) {
+    std::string &outEncryptedAesKey,
+    std::string &outEncryptedData) {
   BCRYPT_KEY_HANDLE hTerminalKey = keys.GetTerminalKeyHandle();
   if (!hTerminalKey)
     return false;
